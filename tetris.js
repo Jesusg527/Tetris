@@ -7,7 +7,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let board = [];
     let currentPiece;
     let gameInterval;
+	 let isPaused = false;
 	 let score = 0;
+	 let highScore = localStorage.getItem('highScore') ? parseInt(localStorage.getItem('highScore'), 10) : 0;
 
     const pieceShapes = {
     I: [
@@ -53,6 +55,8 @@ document.addEventListener('DOMContentLoaded', () => {
         gameInterval = setInterval(updateGame, 1000);
 	 	  score = 0;
         updateScoreDisplay();
+		   highScore = localStorage.getItem('highScore') ? parseInt(localStorage.getItem('highScore'), 			10) : 0;
+    		updateHighScoreDisplay();
     }
 
     // Restart button functionality
@@ -99,6 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 }
     function updateGame() {
+		   if (isPaused) return; 
         if (!movePiece(0, 1)) {
             lockPiece();
             clearLines();
@@ -110,6 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function movePiece(deltaX, deltaY) {
         let newX = currentPiece.x + deltaX;
         let newY = currentPiece.y + deltaY;
+		  if (isPaused) return; 
         if (!checkCollision(newX, newY, currentPiece.shape)) {
             currentPiece.x = newX;
             currentPiece.y = newY;
@@ -162,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
 }
 
     function rotatePiece() {
-    console.log("Attempting to rotate piece");
+	  if (isPaused) return; 
 
     // Assuming you have a function rotateClockwise to rotate the piece's shape matrix
     let newShape = rotateClockwise(currentPiece.shape);
@@ -222,11 +228,39 @@ function updateScore(linesClearedThisTurn) {
     let points = linesClearedThisTurn * 100; // Just an example, adjust as needed
     score += points;
     updateScoreDisplay();
+    document.getElementById('score').innerText = "Score: " + score;
+	 checkAndUpdateHighScore();
 }
 
 function updateScoreDisplay() {
     // Update the webpage to reflect the current score
     document.getElementById('score').innerText = "Score: " + score;
+}
+
+	function checkAndUpdateHighScore() {
+    if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('highScore', highScore.toString());
+        updateHighScoreDisplay();
+    }
+}
+
+	 function updateHighScoreDisplay() {
+    document.getElementById('highScore').innerText = "High Score: " + highScore;
+}
+
+	function togglePause() {
+    if (isPaused) {
+        // Game is currently paused, resume it
+        gameInterval = setInterval(updateGame, 1000); // Adjust the interval as per your game speed
+        isPaused = false;
+        document.getElementById('pauseButton').innerText = 'Pause'; // Update button text to "Pause"
+    } else {
+        // Game is running, pause it
+        clearInterval(gameInterval);
+        isPaused = true;
+        document.getElementById('pauseButton').innerText = 'Resume'; // Update button text to "Resume"
+    }
 }
 
     function renderGame() {
@@ -280,6 +314,11 @@ function updateScoreDisplay() {
 	document.getElementById('restartButton').style.display = 'block';
         renderGame();
     });
+	document.getElementById('pauseButton').addEventListener('click', togglePause);
+	document.getElementById('moveLeft').addEventListener('click', () => movePiece(-1, 0));
+	document.getElementById('moveRight').addEventListener('click', () => movePiece(1, 0));
+	document.getElementById('rotatePiece').addEventListener('click', rotatePiece);
+	document.getElementById('moveDown').addEventListener('click', () => movePiece(0, 1));
 
     initGame();
 });
